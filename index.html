@@ -341,7 +341,7 @@
     </div>
 
     <h2 class="page-title">
-      T-Digi Mess Book
+      T2.0.1-Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -638,8 +638,22 @@ function login() {
   btn.innerText = "Checking...";
 
   // 🚀 Call Apps Script backend
-  google.script.run
-    .withSuccessHandler(function(response) {
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "checkLogin",
+      data: {
+        accNo: accNo,
+        password: password
+      }
+    })
+  })
+  .then(response => response.json())
+  .then(result => {
+  
+    console.log("Login API response:", result);
+  
+    const response = result.data;
 
       if (response.status === "invalid_id") {
         error.innerText = "Account not found";
@@ -648,7 +662,7 @@ function login() {
         error.innerText = "Incorrect password";
 
       } else if (response.status === "success") {
-        google.script.run.updateLastLogin(accNo);
+        //google.script.run.updateLastLogin(accNo);    // XXX---!!! REMOVE THIS LINE !!!---XXX
         error.style.color = "green";
         error.innerText = "Login successful";
 
@@ -916,16 +930,18 @@ function login() {
       // Reset button
       btn.disabled = false;
       btn.innerText = "Login";
+
     })
 
-    .withFailureHandler(function(err) {
+    .catch(function(err) {
+
       error.innerText = "Server error. Try again.";
       btn.disabled = false;
       btn.innerText = "Login";
-      console.error(err);
-    })
 
-    .checkLogin(accNo, password);
+      console.error("Login API error:", err);
+
+    });
 }
 
 function closePopup() {
