@@ -662,7 +662,23 @@ function login() {
         error.innerText = "Incorrect password";
 
       } else if (response.status === "success") {
-        //google.script.run.updateLastLogin(accNo);    // XXX---!!! REMOVE THIS LINE !!!---XXX
+        fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "updateLastLogin",
+            data: {
+              accNo: accNo
+            }
+          })
+        })
+        .then(response => response.json())
+        .then(result => {
+          console.log("Last login update:", result);
+        })
+        .catch(error => {
+          console.error("Last login update error:", error);
+        });
+        
         error.style.color = "green";
         error.innerText = "Login successful";
 
