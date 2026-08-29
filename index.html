@@ -741,18 +741,10 @@ function login() {
 
 
               // Calculate from BLTD data
-              let totalDays = 0;
-
-              Object.values(data.days).forEach(val => {
-                if (val !== "----") totalDays++;
-              });
-
-              // Store globally
-              window.studentData.totalDays = totalDays;
-
-              // Show in UI
+              window.studentData.totalDays = data.totalDays;
+              
               document.getElementById("totalDaysText").innerText =
-                "Total Days: " + totalDays;
+                "Total Days: " + data.totalDays;
 
             console.log(data); // very useful for next step
 
@@ -1022,14 +1014,11 @@ statusMsg.innerText = "Updating...";
       // Update local data
       window.studentData.days[window.selectedKey] = newValue;
   
-      // 🔢 Recalculate total days
-      let totalDays = 0;
-      Object.values(window.studentData.days).forEach(val => {
-        if (val !== "----") totalDays++;
-      });
-  
+      // 🔢 Use billable days (as per min 2-day mess cut rule) calculated by Apps Script
+      const totalDays = result.data.totalDays;
+      
       window.studentData.totalDays = totalDays;
-  
+      
       document.getElementById("totalDaysText").innerText =
         "Total Days: " + totalDays;
   
