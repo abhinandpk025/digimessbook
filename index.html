@@ -614,9 +614,12 @@
 
 <script>
 
+const API_URL = "https://script.google.com/macros/s/AKfycbzk7OSf6vxU7zTkLZD1YF7mTZQDzffQu9nz2mjYPuf3jvy-kWRl3eD4Gs5ZjqcssNZuvw/exec";
+
 // 🔵 Login Screen 🔵 
 
 function login() {
+
   const accNo = document.getElementById("accNo").value.trim();
   const password = document.getElementById("password").value.trim();
   const btn = document.getElementById("loginBtn");
@@ -624,6 +627,7 @@ function login() {
 
   // Clear previous error
   error.innerText = "";
+  error.style.color = "red";
 
   // Validation
   if (!accNo || !password) {
@@ -635,275 +639,80 @@ function login() {
   btn.disabled = true;
   btn.innerText = "Checking...";
 
-  // 🚀 Call Apps Script backend
-  google.script.run
-    .withSuccessHandler(function(response) {
-
-      if (response.status === "invalid_id") {
-        error.innerText = "Account not found";
-
-      } else if (response.status === "wrong_password") {
-        error.innerText = "Incorrect password";
-
-      } else if (response.status === "success") {
-        google.script.run.updateLastLogin(accNo);
-        error.style.color = "green";
-        error.innerText = "Login successful";
-
-        // 👉 Next step: load dashboard
-        // Hide login
-        document.querySelector(".container").style.display = "none";
-
-        // Show dashboard
-        document.getElementById("dashboard").style.display = "block";
-
-        // Set name
-        document.getElementById("studentName").innerText = response.name;
-        google.script.run
-          .withSuccessHandler(function(data) {
-
-            // Store globally
-            window.studentData = data;
-            updateFoodSummary(data.foodPreference);
-
-            // Food Popup Auto open if empty
-            setTimeout(() => {
-              if (!data.foodPreference || data.foodPreference.trim() === "") {
-                openFoodPopup();
-              }
-            }, 300);
-
-
-            if (!data) {
-              alert("Student data not found");
-              return;
-            }
-
-            // Show details (temporary)
-            document.getElementById("studentName").innerHTML =
-              "<div style='line-height:1.8;'>" +
-                "Name : " + data.name + "<br>" +
-                "Acc No : " + data.id + "<br>" +
-                "Hostel : " + data.hostel + "<br>" +
-                "Room : " + data.room +
-              "</div>";
-
-
-              // Calculate from BLTD data
-              let totalDays = 0;
-
-              Object.values(data.days).forEach(val => {
-                if (val !== "----") totalDays++;
-              });
-
-              // Store globally
-              window.studentData.totalDays = totalDays;
-
-              // Show in UI
-              document.getElementById("totalDaysText").innerText =
-                "Total Days: " + totalDays;
-
-            console.log(data); // very useful for next step
-
-            const calendar = document.getElementById("calendarGrid");
-            calendar.innerHTML = "";
-
-            // Week headers
-            const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            weekDays.forEach(day => {
-              const el = document.createElement("div");
-              el.innerText = day;
-              el.style.fontWeight = "bold";
-              calendar.appendChild(el);
-            });
-
-            // 👉 Convert keys to proper Date objects
-            const dateEntries = Object.keys(data.days).map(key => {
-              return {
-                raw: key,
-                dateObj: new Date(key)
-              };
-            });
-
-            // 👉 Sort dates properly
-            dateEntries.sort((a, b) => a.dateObj - b.dateObj);
-
-            // 👉 Get first date
-            const firstDate = dateEntries[0].dateObj;
-            const startDay = firstDate.getDay();
-
-            // 👉 Add empty cells before start
-            for (let i = 0; i < startDay; i++) {
-              const empty = document.createElement("div");
-              calendar.appendChild(empty);
-            }
-
-            // 👉 Loop through sorted dates
-            dateEntries.forEach(entry => {
-
-              const dateObj = entry.dateObj;
-              const value = window.studentData.days[entry.raw];
-
-              const cell = document.createElement("div");
-
-              // ✅ LOCK LOGIC - Create deadline (previous day 7 PM)
-              const deadline = new Date(dateObj);
-              deadline.setDate(deadline.getDate() );
-              deadline.setHours(15, 0, 0, 0);
-
-              // Current time
-              const now = new Date();
-
-              // Check if locked
-              const isLocked = now > deadline;
-
-              // Apply grey background if locked
-              if (isLocked) {
-                cell.style.backgroundColor = "#e0e0e0";
-                cell.style.cursor = "not-allowed";
-              }
-
-
-              // Get today's date
-              const today = new Date();
-
-              // Compare with current cell date
-              if (
-                dateObj.getDate() === today.getDate() &&
-                dateObj.getMonth() === today.getMonth() &&
-                dateObj.getFullYear() === today.getFullYear()
-              ) {
-                cell.style.border = "2px solid blue";
-              }
-
-              cell.style.border = "1px solid #ccc";
-              cell.style.borderRadius = "8px";
-              cell.style.padding = "8px 4px";
-              cell.style.textAlign = "center";
-              cell.style.cursor = "pointer";
-              cell.style.position = "relative";
-              cell.style.minHeight = "58px";
-
-              // ✅ Correct date number
-              const dateNum = dateObj.getDate();
-
-              // Dot color
-              let dotColor = (value === "----") ? "red" : "green";
-
-              cell.innerHTML = `
-                <div style="font-size:14px;font-weight:600;">${dateNum}</div>
-                <div style="
-                  width:8px;
-                  height:8px;
-                  border-radius:50%;
-                  background:${dotColor};
-                  margin:5px auto 0;
-                "></div>
-              `;
-
-              // Click event
-                  cell.onclick = () => {
-
-                    window.selectedDate = dateObj;
-                    window.selectedKey = entry.raw;
-                    window.selectedCell = cell;   // ⭐ IMPORTANT
-                    window.isLocked = isLocked;
-
-                    document.getElementById("popup").style.display = "flex";
-
-                    document.getElementById("popupDate").innerText =
-                      dateObj.toDateString();
-
-                    const msg = document.getElementById("lockMsg");
-
-                    // Create deadline time limit message
-                    const deadline = new Date(dateObj);
-                    deadline.setDate(deadline.getDate() );
-                    deadline.setHours(15, 0, 0, 0);
-
-                    // Format deadline nicely
-                    const options = {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true   // ⭐ IMPORTANT
-                  };
-
-                  const deadlineText = deadline.toLocaleString('en-GB', options);
-
-                  // convert AM/PM → lowercase
-                  const formattedDeadline = deadlineText
-                    .replace('AM', 'am')
-                    .replace('PM', 'pm')
-                    .replace(',', ' •');
-
-
-                    // Show message
-                    if (isLocked) {
-                      msg.innerText = "Locked (Deadline: " + deadlineText + ")";
-                      msg.style.color = "red";
-                    } else {
-                      msg.innerText = "Editable until: " + formattedDeadline;
-                      msg.style.color = "green";
-                    }
-
-                    // Always get latest value
-                    const latestValue = window.studentData.days[entry.raw];
-
-                    document.getElementById("b").checked = latestValue[0] === "B";
-                    document.getElementById("l").checked = latestValue[1] === "L";
-                    document.getElementById("t").checked = latestValue[2] === "T";
-                    document.getElementById("d").checked = latestValue[3] === "D";
-
-                    const disabled = isLocked;
-                    ["b","l","t","d","submitBtn","fullDayBtn","messCutBtn"].forEach(id => {
-                      const el = document.getElementById(id);
-                      if (el) {
-                        el.disabled = disabled;
-
-                        // ✅ Visual state ONLY for popup open logic
-                        if (disabled) {
-                          el.style.opacity = "0.6";
-                          el.style.cursor = "not-allowed";
-                        } else {
-                          el.style.opacity = "1";
-                          el.style.cursor = "pointer";
-                        }
-                      }
-                    });
-
-                    // ✅ Reset status message every time popup opens
-                    const statusMsg = document.getElementById("dayStatusMsg");
-                    if (statusMsg) {
-                      statusMsg.innerText = "";
-                    }
-
-                  };
-
-              calendar.appendChild(cell);
-            });
-
-             
-
-          })
-          .getStudentData(accNo);
+  // 🚀 Call Apps Script API
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "checkLogin",
+      data: {
+        accNo: accNo,
+        password: password
       }
-
-      // Reset button
-      btn.disabled = false;
-      btn.innerText = "Login";
     })
+  })
 
-    .withFailureHandler(function(err) {
-      error.innerText = "Server error. Try again.";
-      btn.disabled = false;
-      btn.innerText = "Login";
-      console.error(err);
-    })
+  .then(response => response.json())
 
-    .checkLogin(accNo, password);
+  .then(result => {
+
+    console.log("Login API response:", result);
+
+    const response = result.data;
+
+    if (response.status === "invalid_id") {
+
+      error.innerText = "Account not found";
+
+    }
+
+    else if (response.status === "wrong_password") {
+
+      error.innerText = "Incorrect password";
+
+    }
+
+    else if (response.status === "success") {
+
+      error.style.color = "green";
+      error.innerText = "Login successful";
+
+      // Hide login
+      document.querySelector(".container").style.display = "none";
+
+      // Show dashboard
+      document.getElementById("dashboard").style.display = "block";
+
+      // Set name
+      document.getElementById("studentName").innerText =
+        response.name;
+
+      console.log("Login successful:", response.name);
+
+    }
+
+    else {
+
+      error.innerText = "Unexpected server response";
+
+    }
+
+  })
+
+  .catch(errorObj => {
+
+    console.error("Login API error:", errorObj);
+
+    error.innerText = "Server error. Try again.";
+
+  })
+
+  .finally(() => {
+
+    btn.disabled = false;
+    btn.innerText = "Login";
+
+  });
+
 }
 
 function closePopup() {
