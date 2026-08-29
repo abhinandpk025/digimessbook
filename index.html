@@ -341,7 +341,7 @@
     </div>
 
     <h2 class="page-title">
-      T2.0.2-Digi Mess Book
+      T2.0.3-Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -1179,19 +1179,42 @@ function submitFood() {
 
   const accNo = document.getElementById("accNo").value;
 
-  google.script.run
-    .withSuccessHandler(function() {
-
-      // update local state
-      window.studentData.foodPreference = value;
-      updateFoodSummary(value);
-
-      document.getElementById("foodError").innerText = "";
-      closeFoodPopup();
-      document.getElementById("dashboard").style.display = "block";
-
-    })
-    .updateFood(accNo, value);
+    fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "updateFood",
+          data: {
+            accNo: accNo,
+            value: value
+          }
+        })
+      })
+      .then(response => response.json())
+      .then(result => {
+    
+        console.log("Update food API response:", result);
+    
+        if (result.status !== "success") {
+          throw new Error(result.message || "Unable to update food preference");
+        }
+    
+        // update local state
+        window.studentData.foodPreference = value;
+        updateFoodSummary(value);
+    
+        document.getElementById("foodError").innerText = "";
+        closeFoodPopup();
+        document.getElementById("dashboard").style.display = "block";
+    
+      })
+      .catch(error => {
+    
+        console.error("Update food API error:", error);
+    
+        document.getElementById("foodError").innerText =
+          "Error... Pls try saving again";
+    
+      });
 }
 
 // Veg only logic
