@@ -343,7 +343,7 @@
     </div>
 
     <h2 class="page-title">
-      T2.0.3-Digi Mess Book
+      T2.0.4-Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -621,6 +621,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzk7OSf6vxU7zTkLZD1YF7m
 // 🔵 Login Screen 🔵 
 
 function login() {
+
   const accNo = document.getElementById("accNo").value.trim();
   const password = document.getElementById("password").value.trim();
   const btn = document.getElementById("loginBtn");
@@ -628,6 +629,7 @@ function login() {
 
   // Clear previous error
   error.innerText = "";
+  error.style.color = "red";
 
   // Validation
   if (!accNo || !password) {
@@ -639,11 +641,11 @@ function login() {
   btn.disabled = true;
   btn.innerText = "Checking...";
 
-  // 🚀 Call Apps Script backend
+  // 🚀 ONE API request for login + student data
   fetch(API_URL, {
     method: "POST",
     body: JSON.stringify({
-      action: "checkLogin",
+      action: "login",
       data: {
         accNo: accNo,
         password: password
@@ -652,10 +654,11 @@ function login() {
   })
   .then(response => response.json())
   .then(result => {
-  
+
     console.log("Login API response:", result);
-  
-    const response = result.data;
+
+    if (result.status !== "success") {
+      const response = result.data;
 
       if (response.status === "invalid_id") {
         error.innerText = "Account not found";
@@ -663,295 +666,266 @@ function login() {
       } else if (response.status === "wrong_password") {
         error.innerText = "Incorrect password";
 
-      } else if (response.status === "success") {
-        fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "updateLastLogin",
-            data: {
-              accNo: accNo
-            }
-          })
-        })
-        .then(response => response.json())
-        .then(result => {
-          console.log("Last login update:", result);
-        })
-        .catch(error => {
-          console.error("Last login update error:", error);
-        });
-        
-        error.style.color = "green";
-        error.innerText = "Login successful";
-
-        // 👉 Next step: load dashboard
-        // Hide login
-        document.querySelector(".container").style.display = "none";
-
-        // Show dashboard
-        document.getElementById("dashboard").style.display = "block";
-
-        // Set name
-        document.getElementById("studentName").innerText = response.name;
-        fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-              action: "getStudentData",
-              data: {
-                accNo: accNo
-              }
-            })
-          })
-          .then(response => response.json())
-          .then(result => {
-          
-            console.log("Student data API response:", result);
-          
-            if (result.status !== "success") {
-              throw new Error("Unable to load student data");
-            }
-          
-            const data = result.data;
-
-            // Store globally
-            window.studentData = data;
-            updateFoodSummary(data.foodPreference);
-
-            // Food Popup Auto open if empty
-            setTimeout(() => {
-              if (!data.foodPreference || data.foodPreference.trim() === "") {
-                openFoodPopup();
-              }
-            }, 300);
-
-
-            if (!data) {
-              alert("Student data not found");
-              return;
-            }
-
-            // Show details (temporary)
-            document.getElementById("studentName").innerHTML =
-              "<div style='line-height:1.8;'>" +
-                "Name : " + data.name + "<br>" +
-                "Acc No : " + data.id + "<br>" +
-                "Hostel : " + data.hostel + "<br>" +
-                "Room : " + data.room +
-              "</div>";
-
-
-              // Calculate from BLTD data
-              window.studentData.totalDays = data.totalDays;
-              
-              document.getElementById("totalDaysText").innerText =
-                "Total Days: " + data.totalDays;
-
-            console.log(data); // very useful for next step
-
-            const calendar = document.getElementById("calendarGrid");
-            calendar.innerHTML = "";
-
-            // Week headers
-            const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            weekDays.forEach(day => {
-              const el = document.createElement("div");
-              el.innerText = day;
-              el.style.fontWeight = "bold";
-              calendar.appendChild(el);
-            });
-
-            // 👉 Convert keys to proper Date objects
-            const dateEntries = Object.keys(data.days).map(key => {
-              return {
-                raw: key,
-                dateObj: new Date(key)
-              };
-            });
-
-            // 👉 Sort dates properly
-            dateEntries.sort((a, b) => a.dateObj - b.dateObj);
-
-            // 👉 Get first date
-            const firstDate = dateEntries[0].dateObj;
-            const startDay = firstDate.getDay();
-
-            // 👉 Add empty cells before start
-            for (let i = 0; i < startDay; i++) {
-              const empty = document.createElement("div");
-              calendar.appendChild(empty);
-            }
-
-            // 👉 Loop through sorted dates
-            dateEntries.forEach(entry => {
-
-              const dateObj = entry.dateObj;
-              const value = window.studentData.days[entry.raw];
-
-              const cell = document.createElement("div");
-
-              // ✅ LOCK LOGIC - Create deadline (previous day 7 PM)
-              const deadline = new Date(dateObj);
-              deadline.setDate(deadline.getDate() );
-              deadline.setHours(15, 0, 0, 0);
-
-              // Current time
-              const now = new Date();
-
-              // Check if locked
-              const isLocked = now > deadline;
-
-              // Apply grey background if locked
-              if (isLocked) {
-                cell.style.backgroundColor = "#e0e0e0";
-                cell.style.cursor = "not-allowed";
-              }
-
-
-              // Get today's date
-              const today = new Date();
-
-              // Compare with current cell date
-              if (
-                dateObj.getDate() === today.getDate() &&
-                dateObj.getMonth() === today.getMonth() &&
-                dateObj.getFullYear() === today.getFullYear()
-              ) {
-                cell.style.border = "2px solid blue";
-              }
-
-              cell.style.border = "1px solid #ccc";
-              cell.style.borderRadius = "8px";
-              cell.style.padding = "8px 4px";
-              cell.style.textAlign = "center";
-              cell.style.cursor = "pointer";
-              cell.style.position = "relative";
-              cell.style.minHeight = "58px";
-
-              // ✅ Correct date number
-              const dateNum = dateObj.getDate();
-
-              // Dot color
-              let dotColor = (value === "----") ? "red" : "green";
-
-              cell.innerHTML = `
-                <div style="font-size:14px;font-weight:600;">${dateNum}</div>
-                <div style="
-                  width:8px;
-                  height:8px;
-                  border-radius:50%;
-                  background:${dotColor};
-                  margin:5px auto 0;
-                "></div>
-              `;
-
-              // Click event
-                  cell.onclick = () => {
-
-                    window.selectedDate = dateObj;
-                    window.selectedKey = entry.raw;
-                    window.selectedCell = cell;   // ⭐ IMPORTANT
-                    window.isLocked = isLocked;
-
-                    document.getElementById("popup").style.display = "flex";
-
-                    document.getElementById("popupDate").innerText =
-                      dateObj.toDateString();
-
-                    const msg = document.getElementById("lockMsg");
-
-                    // Create deadline time limit message
-                    const deadline = new Date(dateObj);
-                    deadline.setDate(deadline.getDate() );
-                    deadline.setHours(15, 0, 0, 0);
-
-                    // Format deadline nicely
-                    const options = {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true   // ⭐ IMPORTANT
-                  };
-
-                  const deadlineText = deadline.toLocaleString('en-GB', options);
-
-                  // convert AM/PM → lowercase
-                  const formattedDeadline = deadlineText
-                    .replace('AM', 'am')
-                    .replace('PM', 'pm')
-                    .replace(',', ' •');
-
-
-                    // Show message
-                    if (isLocked) {
-                      msg.innerText = "Locked (Deadline: " + deadlineText + ")";
-                      msg.style.color = "red";
-                    } else {
-                      msg.innerText = "Editable until: " + formattedDeadline;
-                      msg.style.color = "green";
-                    }
-
-                    // Always get latest value
-                    const latestValue = window.studentData.days[entry.raw];
-
-                    document.getElementById("b").checked = latestValue[0] === "B";
-                    document.getElementById("l").checked = latestValue[1] === "L";
-                    document.getElementById("t").checked = latestValue[2] === "T";
-                    document.getElementById("d").checked = latestValue[3] === "D";
-
-                    const disabled = isLocked;
-                    ["b","l","t","d","submitBtn","fullDayBtn","messCutBtn"].forEach(id => {
-                      const el = document.getElementById(id);
-                      if (el) {
-                        el.disabled = disabled;
-
-                        // ✅ Visual state ONLY for popup open logic
-                        if (disabled) {
-                          el.style.opacity = "0.6";
-                          el.style.cursor = "not-allowed";
-                        } else {
-                          el.style.opacity = "1";
-                          el.style.cursor = "pointer";
-                        }
-                      }
-                    });
-
-                    // ✅ Reset status message every time popup opens
-                    const statusMsg = document.getElementById("dayStatusMsg");
-                    if (statusMsg) {
-                      statusMsg.innerText = "";
-                    }
-
-                  };
-
-              calendar.appendChild(cell);
-            });
-
-             
-
-            })
-            .catch(error => {
-              console.error("Student data API error:", error);
-              alert("Unable to load student data");
-            });
+      } else {
+        error.innerText = "Unable to login. Please try again.";
       }
 
-      // Reset button
-      btn.disabled = false;
-      btn.innerText = "Login";
+      return;
+    }
 
-    })
+    const response = result.data;
+    const data = response.studentData;
 
-    .catch(function(err) {
+    if (!data) {
+      throw new Error("Student data not found");
+    }
 
-      error.innerText = "Server error. Try again.";
-      btn.disabled = false;
-      btn.innerText = "Login";
+    // Store globally
+    window.studentData = data;
 
-      console.error("Login API error:", err);
+    // Food summary
+    updateFoodSummary(data.foodPreference);
+
+    // Food Popup Auto open if empty
+    setTimeout(() => {
+      if (!data.foodPreference || data.foodPreference.trim() === "") {
+        openFoodPopup();
+      }
+    }, 300);
+
+    // Login successful
+    error.style.color = "green";
+    error.innerText = "Login successful";
+
+    // Hide login
+    document.querySelector(".container").style.display = "none";
+
+    // Show dashboard
+    document.getElementById("dashboard").style.display = "block";
+
+    // Student details
+    document.getElementById("studentName").innerHTML =
+      "<div style='line-height:1.8;'>" +
+        "Name : " + data.name + "<br>" +
+        "Acc No : " + data.id + "<br>" +
+        "Hostel : " + data.hostel + "<br>" +
+        "Room : " + data.room +
+      "</div>";
+
+    // Billable days
+    window.studentData.totalDays = data.totalDays;
+
+    document.getElementById("totalDaysText").innerText =
+      "Billable Days: " + data.totalDays;
+
+    console.log(data);
+
+    // Calendar
+    const calendar = document.getElementById("calendarGrid");
+    calendar.innerHTML = "";
+
+    // Week headers
+    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    weekDays.forEach(day => {
+      const el = document.createElement("div");
+      el.innerText = day;
+      el.style.fontWeight = "bold";
+      calendar.appendChild(el);
+    });
+
+    // Convert keys to Date objects
+    const dateEntries = Object.keys(data.days).map(key => {
+      return {
+        raw: key,
+        dateObj: new Date(key)
+      };
+    });
+
+    // Sort dates
+    dateEntries.sort((a, b) => a.dateObj - b.dateObj);
+
+    // First date
+    const firstDate = dateEntries[0].dateObj;
+    const startDay = firstDate.getDay();
+
+    // Empty cells before first date
+    for (let i = 0; i < startDay; i++) {
+      const empty = document.createElement("div");
+      calendar.appendChild(empty);
+    }
+
+    // Create calendar
+    dateEntries.forEach(entry => {
+
+      const dateObj = entry.dateObj;
+      const value = window.studentData.days[entry.raw];
+
+      const cell = document.createElement("div");
+
+      // 🔒 Deadline
+      const deadline = new Date(dateObj);
+      deadline.setDate(deadline.getDate());
+      deadline.setHours(15, 0, 0, 0);
+
+      const now = new Date();
+      const isLocked = now > deadline;
+
+      if (isLocked) {
+        cell.style.backgroundColor = "#e0e0e0";
+        cell.style.cursor = "not-allowed";
+      }
+
+      // Today
+      const today = new Date();
+
+      if (
+        dateObj.getDate() === today.getDate() &&
+        dateObj.getMonth() === today.getMonth() &&
+        dateObj.getFullYear() === today.getFullYear()
+      ) {
+        cell.style.border = "2px solid blue";
+      }
+
+      cell.style.border = "1px solid #ccc";
+      cell.style.borderRadius = "8px";
+      cell.style.padding = "8px 4px";
+      cell.style.textAlign = "center";
+      cell.style.cursor = "pointer";
+      cell.style.position = "relative";
+      cell.style.minHeight = "58px";
+
+      // Date number
+      const dateNum = dateObj.getDate();
+
+      // Dot color
+      let dotColor = (value === "----") ? "red" : "green";
+
+      cell.innerHTML = `
+        <div style="font-size:14px;font-weight:600;">${dateNum}</div>
+        <div style="
+          width:8px;
+          height:8px;
+          border-radius:50%;
+          background:${dotColor};
+          margin:5px auto 0;
+        "></div>
+      `;
+
+      // Click event
+      cell.onclick = () => {
+
+        window.selectedDate = dateObj;
+        window.selectedKey = entry.raw;
+        window.selectedCell = cell;
+        window.isLocked = isLocked;
+
+        document.getElementById("popup").style.display = "flex";
+
+        document.getElementById("popupDate").innerText =
+          dateObj.toDateString();
+
+        const msg = document.getElementById("lockMsg");
+
+        // Create deadline
+        const deadline = new Date(dateObj);
+        deadline.setDate(deadline.getDate());
+        deadline.setHours(15, 0, 0, 0);
+
+        const options = {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        };
+
+        const deadlineText =
+          deadline.toLocaleString('en-GB', options);
+
+        const formattedDeadline = deadlineText
+          .replace('AM', 'am')
+          .replace('PM', 'pm')
+          .replace(',', ' •');
+
+        if (isLocked) {
+          msg.innerText =
+            "Locked (Deadline: " + deadlineText + ")";
+          msg.style.color = "red";
+        } else {
+          msg.innerText =
+            "Editable until: " + formattedDeadline;
+          msg.style.color = "green";
+        }
+
+        // Latest value
+        const latestValue =
+          window.studentData.days[entry.raw];
+
+        document.getElementById("b").checked =
+          latestValue[0] === "B";
+
+        document.getElementById("l").checked =
+          latestValue[1] === "L";
+
+        document.getElementById("t").checked =
+          latestValue[2] === "T";
+
+        document.getElementById("d").checked =
+          latestValue[3] === "D";
+
+        const disabled = isLocked;
+
+        ["b","l","t","d","submitBtn","fullDayBtn","messCutBtn"]
+          .forEach(id => {
+
+            const el = document.getElementById(id);
+
+            if (el) {
+
+              el.disabled = disabled;
+
+              if (disabled) {
+                el.style.opacity = "0.6";
+                el.style.cursor = "not-allowed";
+              } else {
+                el.style.opacity = "1";
+                el.style.cursor = "pointer";
+              }
+            }
+          });
+
+        // Reset status
+        const statusMsg =
+          document.getElementById("dayStatusMsg");
+
+        if (statusMsg) {
+          statusMsg.innerText = "";
+        }
+
+      };
+
+      calendar.appendChild(cell);
 
     });
+
+  })
+  .catch(function(err) {
+
+    console.error("Login API error:", err);
+
+    error.style.color = "red";
+    error.innerText = "Server error. Try again.";
+
+  })
+  .finally(function() {
+
+    btn.disabled = false;
+    btn.innerText = "Login";
+
+  });
+
 }
 
 function closePopup() {
@@ -1020,7 +994,7 @@ statusMsg.innerText = "Updating...";
       window.studentData.totalDays = totalDays;
       
       document.getElementById("totalDaysText").innerText =
-        "Total Days: " + totalDays;
+        "Billable Days: " + totalDays;
   
       // Update dot
       let dotColor = (newValue === "----") ? "red" : "green";
