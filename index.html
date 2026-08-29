@@ -341,7 +341,7 @@
     </div>
 
     <h2 class="page-title">
-      T2.0.1-Digi Mess Book
+      T2.0.2-Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -993,77 +993,92 @@ statusMsg.innerText = "";
 statusMsg.style.color = "#555";
 statusMsg.innerText = "Updating...";
 
-google.script.run
-  .withSuccessHandler(function() {
-
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "updateDay",
+      data: {
+        accNo: accNo,
+        dateKey: window.selectedKey,
+        value: code
+      }
+    })
+  })
+  .then(response => response.json())
+  .then(result => {
+  
+    console.log("Update day API response:", result);
+  
+    if (result.status !== "success") {
+      throw new Error(result.message || "Backend error");
+    }
+  
     try {
-
+  
       let newValue = code;
-
+  
       // Update local data
       window.studentData.days[window.selectedKey] = newValue;
-
+  
       // 🔢 Recalculate total days
       let totalDays = 0;
       Object.values(window.studentData.days).forEach(val => {
         if (val !== "----") totalDays++;
       });
-
+  
       window.studentData.totalDays = totalDays;
-
+  
       document.getElementById("totalDaysText").innerText =
         "Total Days: " + totalDays;
-
+  
       // Update dot
       let dotColor = (newValue === "----") ? "red" : "green";
       const dot = window.selectedCell.children[1];
       dot.style.background = dotColor;
-
+  
       // ✅ Success message
       statusMsg.style.color = "green";
       statusMsg.innerText = "Successfully Updated";
-
+  
       // ⏳ Close after 1 sec
       setTimeout(() => {
-
-        // 🔓 Re-enable UI before closing (important for next open)
+  
+        // 🔓 Re-enable UI
         ["b","l","t","d","submitBtn","fullDayBtn","messCutBtn"].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.disabled = false;
         });
-
+  
         closePopup();
-
+  
       }, 1000);
-
+  
     } catch (e) {
-
-      // ❌ Error case
+  
       statusMsg.style.color = "red";
       statusMsg.innerText = "Error... Pls try submitting again";
-
-      // 🔓 Re-enable UI
+  
       ["b","l","t","d","submitBtn","fullDayBtn","messCutBtn"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = false;
       });
+  
     }
-
+  
   })
-  .withFailureHandler(function() {
-
-    // ❌ Backend error
+  .catch(function(error) {
+  
+    console.error("Update day API error:", error);
+  
     statusMsg.style.color = "red";
     statusMsg.innerText = "Error... Pls try submitting again";
-
-    // 🔓 Re-enable UI
+  
     ["b","l","t","d","submitBtn","fullDayBtn","messCutBtn"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.disabled = false;
     });
-
-  })
-  .updateDay(accNo, window.selectedKey, code);
+  
+  });
 
 }
 
