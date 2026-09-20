@@ -763,10 +763,10 @@ function login() {
 
       const cell = document.createElement("div");
 
-      // 🔒 Deadline
+      // 🔒 Deadline for editing option
       const deadline = new Date(dateObj);
-      deadline.setDate(deadline.getDate());
-      deadline.setHours(15, 0, 0, 0);
+      deadline.setDate(deadline.getDate()-1);
+      deadline.setHours(19, 0, 0, 0);
 
       const now = new Date();
       const isLocked = now > deadline;
@@ -827,10 +827,10 @@ function login() {
 
         const msg = document.getElementById("lockMsg");
 
-        // Create deadline
+        // Display deadline in Popup card
         const deadline = new Date(dateObj);
-        deadline.setDate(deadline.getDate());
-        deadline.setHours(15, 0, 0, 0);
+        deadline.setDate(deadline.getDate()-1);
+        deadline.setHours(19, 0, 0, 0);
 
         const options = {
           day: '2-digit',
