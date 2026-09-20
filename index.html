@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>DigiMessBook</title>
+  <title>T-DigiMessBook</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -345,7 +345,7 @@
     </div>
 
     <h2 class="page-title">
-      T2.0.6-Digi Mess Book
+     T2.0.6-Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -399,11 +399,11 @@
 
   <h4 class="text-secondary" style="margin-top:-10px;">Welcome</h4>
 
-  <h2>Test : Digi Mess Book Lite</h2>
+  <h2>Test Digi Mess Book Lite</h2>
 
   <p id="studentName"></p>
 
-  <h3>Mess Book - July 2026</h3>
+  <h3>Sep 2026</h3>
 
   <p id="totalDaysText"></p>
 
@@ -423,7 +423,7 @@
 
     <!-- 🔵 Footer Section -->
     <div class="mt-15" style="font-size:15px;color:#7393B3;">
-      <br>This is a limited free trial version<br>
+      <br>This is a Limited, Free trial version<br>
     </div>
 
     <div class="mt-15 text-normal text-muted">
@@ -617,7 +617,7 @@
 
 
 <script>
-
+// Back-end connecting API end point
 const API_URL = "https://script.google.com/macros/s/AKfycbzk7OSf6vxU7zTkLZD1YF7mTZQDzffQu9nz2mjYPuf3jvy-kWRl3eD4Gs5ZjqcssNZuvw/exec";
 
 // 🔵 Login Screen 🔵 
@@ -763,7 +763,7 @@ function login() {
 
       const cell = document.createElement("div");
 
-      // 🔒 Deadline for editing option
+      // 🔒 Deadline
       const deadline = new Date(dateObj);
       deadline.setDate(deadline.getDate()-1);
       deadline.setHours(19, 0, 0, 0);
@@ -827,7 +827,7 @@ function login() {
 
         const msg = document.getElementById("lockMsg");
 
-        // Display deadline in Popup card
+        // Create deadline
         const deadline = new Date(dateObj);
         deadline.setDate(deadline.getDate()-1);
         deadline.setHours(19, 0, 0, 0);
