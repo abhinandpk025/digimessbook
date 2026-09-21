@@ -345,7 +345,7 @@
     </div>
 
     <h2 class="page-title">
-     T2.0.7-Digi Mess Book
+     T2.0.7 - Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -620,6 +620,34 @@
 // Back-end connecting API end point
 const API_URL = "https://script.google.com/macros/s/AKfycbzk7OSf6vxU7zTkLZD1YF7mTZQDzffQu9nz2mjYPuf3jvy-kWRl3eD4Gs5ZjqcssNZuvw/exec";
 
+function getMessCutDotColor(dateEntries, currentIndex, days) {
+
+  const currentKey = dateEntries[currentIndex].raw;
+
+  // Not a mess cut → green
+  if (days[currentKey] !== "----") {
+    return "green";
+  }
+
+  // Check previous day
+  const previousIsCut =
+    currentIndex > 0 &&
+    days[dateEntries[currentIndex - 1].raw] === "----";
+
+  // Check next day
+  const nextIsCut =
+    currentIndex < dateEntries.length - 1 &&
+    days[dateEntries[currentIndex + 1].raw] === "----";
+
+  // Continuous with previous OR next → red
+  if (previousIsCut || nextIsCut) {
+    return "red";
+  }
+
+  // No cut before AND no cut after → isolated → yellow
+  return "yellow";
+}
+  
 // 🔵 Login Screen 🔵 
 
 function login() {
@@ -735,7 +763,7 @@ function login() {
     });
 
     // Convert keys to Date objects
-    const dateEntries = Object.keys(data.days).map(key => {
+    window.dateEntries = Object.keys(data.days).map(key => {
       return {
         raw: key,
         dateObj: new Date(key)
@@ -743,7 +771,7 @@ function login() {
     });
 
     // Sort dates
-    dateEntries.sort((a, b) => a.dateObj - b.dateObj);
+    window.dateEntries.sort((a, b) => a.dateObj - b.dateObj);
 
     // First date
     const firstDate = dateEntries[0].dateObj;
@@ -799,7 +827,11 @@ function login() {
       const dateNum = dateObj.getDate();
 
       // Dot color
-      let dotColor = (value === "----") ? "red" : "green";
+      let dotColor = getMessCutDotColor(
+        window.dateEntries,
+        window.dateEntries.indexOf(entry),
+        window.studentData.days
+      );
 
       cell.innerHTML = `
         <div style="font-size:14px;font-weight:600;">${dateNum}</div>
