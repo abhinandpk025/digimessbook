@@ -1040,10 +1040,8 @@ statusMsg.innerText = "Updating...";
       document.getElementById("totalDaysText").innerText =
         "Billable Days: " + totalDays;
   
-      // Update dot
-      let dotColor = (newValue === "----") ? "red" : "green";
-      const dot = window.selectedCell.children[1];
-      dot.style.background = dotColor;
+      // Recalculate all mess-cut dot colors
+      updateAllMessCutDots();
   
       // ✅ Success message
       statusMsg.style.color = "green";
