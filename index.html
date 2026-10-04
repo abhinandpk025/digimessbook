@@ -620,32 +620,43 @@
 // Back-end connecting API end point
 const API_URL = "https://script.google.com/macros/s/AKfycbzk7OSf6vxU7zTkLZD1YF7mTZQDzffQu9nz2mjYPuf3jvy-kWRl3eD4Gs5ZjqcssNZuvw/exec";
 
-function getMessCutDotColor(dateEntries, currentIndex, days) {
+function updateAllMessCutDots() {
 
-  const currentKey = dateEntries[currentIndex].raw;
+  const dateEntries = window.dateEntries;
+  const days = window.studentData.days;
 
-  // Not a mess cut → green
-  if (days[currentKey] !== "----") {
-    return "green";
-  }
+  dateEntries.forEach((entry, index) => {
 
-  // Check previous day
-  const previousIsCut =
-    currentIndex > 0 &&
-    days[dateEntries[currentIndex - 1].raw] === "----";
+    const value = days[entry.raw];
+    let dotColor = "green";
 
-  // Check next day
-  const nextIsCut =
-    currentIndex < dateEntries.length - 1 &&
-    days[dateEntries[currentIndex + 1].raw] === "----";
+    if (value === "----") {
 
-  // Continuous with previous OR next → red
-  if (previousIsCut || nextIsCut) {
-    return "red";
-  }
+      const previousIsCut =
+        index > 0 &&
+        days[dateEntries[index - 1].raw] === "----";
 
-  // No cut before AND no cut after → isolated → yellow
-  return "yellow";
+      const nextIsCut =
+        index < dateEntries.length - 1 &&
+        days[dateEntries[index + 1].raw] === "----";
+
+      if (previousIsCut || nextIsCut) {
+        dotColor = "red";
+      } else {
+        dotColor = "yellow";
+      }
+    }
+
+    const cell = document.querySelector(
+      `[data-date-key="${entry.raw}"]`
+    );
+
+    if (cell) {
+      const dot = cell.children[1];
+      dot.style.background = dotColor;
+    }
+
+  });
 }
   
 // 🔵 Login Screen 🔵 
@@ -791,6 +802,8 @@ function login() {
 
       const cell = document.createElement("div");
 
+      cell.setAttribute("data-date-key", entry.raw);
+
       // 🔒 Deadline
       const deadline = new Date(dateObj);
       deadline.setDate(deadline.getDate()-1);
@@ -827,11 +840,7 @@ function login() {
       const dateNum = dateObj.getDate();
 
       // Dot color
-      let dotColor = getMessCutDotColor(
-        window.dateEntries,
-        window.dateEntries.indexOf(entry),
-        window.studentData.days
-      );
+      let dotColor = "green";
 
       cell.innerHTML = `
         <div style="font-size:14px;font-weight:600;">${dateNum}</div>
@@ -941,6 +950,9 @@ function login() {
       calendar.appendChild(cell);
 
     });
+
+    updateAllMessCutDots();
+    
 
   })
   .catch(function(err) {
