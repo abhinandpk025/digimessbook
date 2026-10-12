@@ -345,7 +345,7 @@
     </div>
 
     <h2 class="page-title">
-     T2.0.8(1) - Digi Mess Book
+     T2.0.8(2) - Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -1408,6 +1408,47 @@ function initFoodToggleLogic() {
     document.getElementById("foodSummary").innerText =
       "Preference: " + items.join(", ");
   }
+
+  
+  // 🔵 Technical Support Popup
+
+function openSupportPopup() {
+  document.getElementById("supportPopup").style.display = "flex";
+
+  // Always open on Forgot Password tab
+  showSupportTab("forgot");
+}
+
+function closeSupportPopup() {
+  document.getElementById("supportPopup").style.display = "none";
+}
+
+function showSupportTab(tab) {
+
+  // Hide all tab contents
+  document.getElementById("forgotTabContent").style.display = "none";
+  document.getElementById("resetTabContent").style.display = "none";
+  document.getElementById("otherTabContent").style.display = "none";
+
+  // Reset tab button appearance
+  document.getElementById("forgotTab").style.background = "#eee";
+  document.getElementById("forgotTab").style.color = "#333";
+
+  document.getElementById("resetTab").style.background = "#eee";
+  document.getElementById("resetTab").style.color = "#333";
+
+  document.getElementById("otherTab").style.background = "#eee";
+  document.getElementById("otherTab").style.color = "#333";
+
+  // Show selected tab
+  document.getElementById(tab + "TabContent").style.display = "block";
+
+  // Highlight selected tab
+  const activeTab = document.getElementById(tab + "Tab");
+
+  activeTab.style.background = "#4CAF50";
+  activeTab.style.color = "white";
+}
 
 </script>
 
