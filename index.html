@@ -752,6 +752,108 @@
   </div>
 </div>
 
+  
+// 🔑 Forgot Password
+
+function getForgotPassword() {
+
+  const accNo = document.getElementById("forgotAccNo").value.trim();
+  const statusMsg = document.getElementById("forgotStatusMsg");
+  const btn = event.target;
+
+  statusMsg.innerText = "";
+  statusMsg.style.color = "#555";
+
+  if (!accNo) {
+    statusMsg.style.color = "red";
+    statusMsg.innerText = "Please enter your account number.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = "Checking...";
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "forgotPassword",
+      data: {
+        accNo: accNo
+      }
+    })
+  })
+  .then(response => response.json())
+  .then(result => {
+
+    console.log("Forgot password API response:", result);
+
+    if (result.status !== "success") {
+      throw new Error(result.message || "Backend error");
+    }
+
+    const response = result.data;
+
+    if (response.status === "invalid_id") {
+
+      statusMsg.style.color = "red";
+      statusMsg.innerText = "Account not found.";
+
+    }
+
+    else if (response.status === "no_email") {
+
+      statusMsg.style.color = "red";
+      statusMsg.innerText =
+        "No email found. Please fill the Support GForm for the moment.";
+
+    }
+
+    else if (response.status === "sent") {
+
+      const email = response.email;
+
+      // Mask email
+      const parts = email.split("@");
+      const username = parts[0];
+      const domain = parts[1];
+
+      let maskedUsername;
+
+      if (username.length <= 2) {
+        maskedUsername = username + "***";
+      } else {
+        maskedUsername =
+          username.substring(0, 2) +
+          "***" +
+          username.substring(username.length - 2);
+      }
+
+      const emailHint = maskedUsername + "@" + domain;
+
+      statusMsg.style.color = "green";
+      statusMsg.innerText =
+        "Your password has been sent to your email ID given: " +
+        emailHint;
+
+    }
+
+  })
+  .catch(error => {
+
+    console.error("Forgot password API error:", error);
+
+    statusMsg.style.color = "red";
+    statusMsg.innerText =
+      "Unable to process your request. Please try again.";
+
+  })
+  .finally(() => {
+
+    btn.disabled = false;
+    btn.innerText = "Get Password";
+
+  });
+}
 
 <script>
 // Back-end connecting API end point
