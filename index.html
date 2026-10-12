@@ -345,7 +345,7 @@
     </div>
 
     <h2 class="page-title">
-     T2.0.8(4) - Digi Mess Book
+     T2.0.8(5) - Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -1456,7 +1456,7 @@ function getForgotPassword() {
 
   const accNo = document.getElementById("forgotAccNo").value.trim();
   const statusMsg = document.getElementById("forgotStatusMsg");
-  const btn = event.target;
+  const btn = document.querySelector("#forgotTabContent button");
 
   statusMsg.innerText = "";
   statusMsg.style.color = "#555";
@@ -1490,6 +1490,7 @@ function getForgotPassword() {
 
     const response = result.data;
 
+    // Account doesn't exist
     if (response.status === "invalid_id") {
 
       statusMsg.style.color = "red";
@@ -1497,6 +1498,7 @@ function getForgotPassword() {
 
     }
 
+    // Account exists but no email
     else if (response.status === "no_email") {
 
       statusMsg.style.color = "red";
@@ -1505,6 +1507,16 @@ function getForgotPassword() {
 
     }
 
+    // Account exists + email exists, but password not set
+    else if (response.status === "no_password") {
+
+      statusMsg.style.color = "red";
+      statusMsg.innerText =
+        "No password set !!! Contact tech team via GForm.";
+
+    }
+
+    // Password successfully sent
     else if (response.status === "sent") {
 
       const email = response.email;
