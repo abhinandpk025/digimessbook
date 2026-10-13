@@ -345,7 +345,7 @@
     </div>
 
     <h2 class="page-title">
-     T2.0.8(5) - Digi Mess Book
+     T2.0.8(6) - Digi Mess Book
     </h2>
     <hr class="login-divider">
 
@@ -1547,15 +1547,15 @@ function getForgotPassword() {
     }
 
   })
+  
   .catch(error => {
-
     console.error("Forgot password API error:", error);
-
+  
     statusMsg.style.color = "red";
     statusMsg.innerText =
-      "Unable to process your request. Please try again.";
-
+      "Debug: " + (error.message || String(error));
   })
+
   .finally(() => {
 
     btn.disabled = false;
